@@ -69,7 +69,7 @@ void f ( int n )
   int i;
   int *x;
 
-  x = ( int * ) malloc ( (n+1) * sizeof ( int ) );
+  x = ( int * ) malloc ( (n+1) * sizeof ( int ) ); //need n+1 integers because indexing starts at 0
 
   x[0] = 1;
   cout << "  " << 0 << "  " << x[0] << "\n";
@@ -83,7 +83,7 @@ void f ( int n )
     cout << "  " << i << "  " << x[i] << "\n";
   }
 
-  free(x);
+  free(x); //need to use free not delete [] because malloc
 
   return;
 }
