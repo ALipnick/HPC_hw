@@ -24,8 +24,27 @@ void MMult0(long m, long n, long k, double *a, double *b, double *c) {
   }
 }
 
+void matrix_mult(double *A, double *B, double *C) {
+  // C + A*B
+}
+
 void MMult1(long m, long n, long k, double *a, double *b, double *c) {
   // TODO: See instructions below
+  for ( long i = 0; i < m; i+= BLOCK_SIZE) {
+    for (long j = 0; j < n; j+= BLOCK_SIZE) {
+      //I = ((i-1)*b + 1): i*b 
+      //J = ((j-1)*b + 1): j*b
+      //double C_ij = c[I,J]
+      C_ij = matrix_load
+      for (long p = 0; p < k; p+= BLOCK_SIZE) {
+        //K = ((k-1)*b+1):k*b
+        double A_ip = a[I,K]
+        double B_pj = b[K,j]
+        C_ij = matrix_mult(A_ip, B_pj, C_ij);
+        c[I,J] = C_ij
+      }
+    }
+  }
 }
 
 int main(int argc, char** argv) {
