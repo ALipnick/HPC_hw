@@ -24,7 +24,7 @@ omp_init_lock(&locka);
 omp_init_lock(&lockb);
 
 /* Fork a team of threads giving them their own copies of variables */
-#pragma omp parallel shared(a, b, nthreads, locka, lockb) private(tid)
+#pragma omp parallel shared(a, b, nthreads, locka, lockb) private(tid,i)
   {
 
   /* Obtain thread number and number of threads */
@@ -45,21 +45,22 @@ omp_init_lock(&lockb);
       omp_set_lock(&locka);
       for (i=0; i<N; i++)
         a[i] = i * DELTA;
-      omp_set_lock(&lockb);
+      omp_unset_lock(&locka); //unlock a here so second section can continue second part and add b to a.
+      omp_set_lock(&lockb); //keep lock here so we don't add a to b until after b is done being updated
+      //note the order of a += b before b += a was chosen arbitrarily and switching the oder yields a different answer
       printf("Thread %d adding a[] to b[]\n",tid);
       for (i=0; i<N; i++)
         b[i] += a[i];
       omp_unset_lock(&lockb);
-      omp_unset_lock(&locka);
       }
 
     #pragma omp section
       {
       printf("Thread %d initializing b[]\n",tid);
-      omp_set_lock(&lockb);
+      omp_set_lock(&lockb); //keep so other thread doesn't use a until we have addded b to a
       for (i=0; i<N; i++)
         b[i] = i * PI;
-      omp_set_lock(&locka);
+      omp_set_lock(&locka); //keep lock as it ensures other thread is done
       printf("Thread %d adding b[] to a[]\n",tid);
       for (i=0; i<N; i++)
         a[i] += b[i];
@@ -68,6 +69,9 @@ omp_init_lock(&lockb);
       }
     }  /* end of sections */
   }  /* end of parallel region */
+  printf("%f\n", a[1]);
 
+omp_destroy_lock(&locka);
+omp_destroy_lock(&lockb);
 }
 

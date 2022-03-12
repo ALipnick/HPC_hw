@@ -8,7 +8,7 @@
 #include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define N     50
+#define N 1048
 
 int main (int argc, char *argv[]) 
 {
@@ -83,8 +83,7 @@ void print_results(float array[N], int tid, int section)
     printf("\n");
   } /*** end of critical ***/
 
-  #pragma omp barrier
-  printf("Thread %d done and synchronized.\n", tid); 
-
+  //#pragma omp barrier //commented out because only 2 threads get to this point, not all
+  printf("Thread %d done and synchronized.\n", tid);
 }
   
