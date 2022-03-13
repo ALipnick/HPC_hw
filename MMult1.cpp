@@ -30,22 +30,37 @@ void matrix_mult(double *A, double *B, double *C) {
 
 void MMult1(long m, long n, long k, double *a, double *b, double *c) {
   // TODO: See instructions below
-  for ( long i = 0; i < m; i+= BLOCK_SIZE) {
-    for (long j = 0; j < n; j+= BLOCK_SIZE) {
-      //I = ((i-1)*b + 1): i*b 
-      //J = ((j-1)*b + 1): j*b
-      //double C_ij = c[I,J]
-      C_ij = matrix_load
-      for (long p = 0; p < k; p+= BLOCK_SIZE) {
-        //K = ((k-1)*b+1):k*b
-        double A_ip = a[I,K]
-        double B_pj = b[K,j]
-        C_ij = matrix_mult(A_ip, B_pj, C_ij);
-        c[I,J] = C_ij
+//   for ( long i = 0; i < m; i+= BLOCK_SIZE) {
+//     for (long j = 0; j < n; j+= BLOCK_SIZE) {
+//       //I = ((i-1)*b + 1): i*b
+//       //J = ((j-1)*b + 1): j*b
+//       //double C_ij = c[I,J]
+//       double C_ij[BLOCK_SIZE][BLOCK_SIZE]
+//       for (long p = 0; p < k; p+= BLOCK_SIZE) {
+//         //K = ((k-1)*b+1):k*b
+//         double A_ip = a[I,K]
+//         double B_pj = b[K,j]
+//         C_ij = matrix_mult(A_ip, B_pj, C_ij);
+//         c[I,J] = C_ij
+//       }
+//     }
+//   }
+// }
+  for (int ii = 0; ii < m; ii+=BLOCK_SIZE) {
+    for (int jj = 0; jj < n; jj+=BLOCK_SIZE) {
+      for (int pp = 0; pp < k; pp+=BLOCK_SIZE) {
+        for (int i = ii; i < ii+BLOCK_SIZE; i++) {
+          for (int j = jj; j < jj+BLOCK_SIZE; j++) {
+            for (int p = pp; p < pp+BLOCK_SIZE; p++) {
+              c[i+j*m] = c[i+j*m] + a[i+p*m] * b[p+j*k];
+            }
+          }
+        }
       }
     }
   }
 }
+
 
 int main(int argc, char** argv) {
   const long PFIRST = BLOCK_SIZE;
@@ -77,9 +92,9 @@ int main(int argc, char** argv) {
       MMult1(m, n, k, a, b, c);
     }
     double time = t.toc();
-    double flops = 0; // TODO: calculate from m, n, k, NREPEATS, time
+    double flops = 2*(m*n*1e-9)*k*NREPEATS/time; // TODO: calculate from m, n, k, NREPEATS, time
     double bandwidth = 0; // TODO: calculate from m, n, k, NREPEATS, time
-    printf("%10d %10f %10f %10f", p, time, flops, bandwidth);
+    printf("%10ld %10f %10f %10f", p, time, flops, bandwidth);
 
     double max_err = 0;
     for (long i = 0; i < m*n; i++) max_err = std::max(max_err, fabs(c[i] - c_ref[i]));
