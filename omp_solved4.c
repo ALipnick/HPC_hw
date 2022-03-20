@@ -16,7 +16,7 @@ int nthreads, tid, i, j;
 
 /* Fork a team of threads with explicit variable scoping */
 #pragma omp parallel shared(nthreads) private(i,j,tid)
-  {
+  { //change a to local variable because each will have its own copy
   double* a = (double*) malloc(N * N * sizeof(double)); // m x k
 
   /* Obtain/print thread info */

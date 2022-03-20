@@ -24,43 +24,28 @@ void MMult0(long m, long n, long k, double *a, double *b, double *c) {
   }
 }
 
-void matrix_mult(double *A, double *B, double *C) {
-  // C + A*B
-}
-
 void MMult1(long m, long n, long k, double *a, double *b, double *c) {
   // TODO: See instructions below
-//   for ( long i = 0; i < m; i+= BLOCK_SIZE) {
-//     for (long j = 0; j < n; j+= BLOCK_SIZE) {
-//       //I = ((i-1)*b + 1): i*b
-//       //J = ((j-1)*b + 1): j*b
-//       //double C_ij = c[I,J]
-//       double C_ij[BLOCK_SIZE][BLOCK_SIZE]
-//       for (long p = 0; p < k; p+= BLOCK_SIZE) {
-//         //K = ((k-1)*b+1):k*b
-//         double A_ip = a[I,K]
-//         double B_pj = b[K,j]
-//         C_ij = matrix_mult(A_ip, B_pj, C_ij);
-//         c[I,J] = C_ij
-//       }
-//     }
-//   }
-// }
-  for (int ii = 0; ii < m; ii+=BLOCK_SIZE) {
-    for (int jj = 0; jj < n; jj+=BLOCK_SIZE) {
-      for (int pp = 0; pp < k; pp+=BLOCK_SIZE) {
-        for (int i = ii; i < ii+BLOCK_SIZE; i++) {
-          for (int j = jj; j < jj+BLOCK_SIZE; j++) {
-            for (int p = pp; p < pp+BLOCK_SIZE; p++) {
-              c[i+j*m] = c[i+j*m] + a[i+p*m] * b[p+j*k];
+  long N = m/BLOCK_SIZE;
+  for (long J = 1; J < N+1; J++){
+    for (long I = 1; I < N+1; I++){
+      for (long P = 1; P < N+1; P++){
+        #pragma omp colapse(2)
+        for (long j = (J-1)*BLOCK_SIZE; j < J*BLOCK_SIZE; j++) {
+          for (long i = (I-1)*BLOCK_SIZE; i < I*BLOCK_SIZE; i++) {
+             double C_ij = c[i+j*m];
+            for (long p = (P-1)*BLOCK_SIZE; p < P*BLOCK_SIZE; p++) {
+              double A_ip = a[i+p*m];
+              double B_pj = b[p+j*k];
+              C_ij = C_ij + A_ip * B_pj;
             }
+            c[i+j*m] = C_ij;
           }
         }
       }
     }
   }
 }
-
 
 int main(int argc, char** argv) {
   const long PFIRST = BLOCK_SIZE;
@@ -93,7 +78,7 @@ int main(int argc, char** argv) {
     }
     double time = t.toc();
     double flops = 2*(m*n*1e-9)*k*NREPEATS/time; // TODO: calculate from m, n, k, NREPEATS, time
-    double bandwidth = 0; // TODO: calculate from m, n, k, NREPEATS, time
+    double bandwidth = 8*2*(m*n*1e-9)*(1+k)*NREPEATS/time; // TODO: calculate from m, n, k, NREPEATS, time
     printf("%10ld %10f %10f %10f", p, time, flops, bandwidth);
 
     double max_err = 0;

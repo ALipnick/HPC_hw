@@ -11,14 +11,14 @@
 
 int main (int argc, char *argv[]) 
 {
-int nthreads, i; //tid should not be global variable but different for each thread
+int nthreads, i, tid; //tid should not be global variable but different for each thread
 float total;
 
 /*** Spawn parallel region ***/
-#pragma omp parallel 
+#pragma omp parallel private(tid) //make tid private for each thread
   {
   /* Obtain thread number */
-  int tid = omp_get_thread_num(); //create tid here
+  tid = omp_get_thread_num();
   /* Only master thread does this */
   if (tid == 0) {
     nthreads = omp_get_num_threads();
