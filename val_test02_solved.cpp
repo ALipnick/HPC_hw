@@ -1,6 +1,9 @@
 # include <cstdlib>
 # include <iostream>
 
+//need to intialize all values of x, otherwise tries to reference undefined values
+
+
 using namespace std;
 
 void junk_data ( );

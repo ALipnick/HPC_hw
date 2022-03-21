@@ -3,6 +3,9 @@
 
 using namespace std;
 
+//need n+1 int size for x because n+1 fib numbers
+//need to free instead of delete because malloc
+
 int main ( );
 void f ( int n );
 

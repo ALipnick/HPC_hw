@@ -13,6 +13,10 @@
 #define PI 3.1415926535
 #define DELTA .01415926535
 
+//one thread locks a, the other locks b, then both need to enter the other's lock
+//fixed by making one thread unset it's lock so the other can finish then the first thread can finish after
+//kept lock on creating array for first thread so second doesn't begin adding values that hasn't been defined yet.
+
 int main (int argc, char *argv[]) 
 {
 int nthreads, tid, i;

@@ -9,10 +9,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+//tid was shared to it would get overwritten by each thread, each thread needs its own private copy 
+//made tid private
+//total was different each time because race condition
+//got rid of nested parallel region
 
 int main (int argc, char *argv[]) 
 {
-int nthreads, i, tid; //tid should not be global variable but different for each thread
+int nthreads, i, tid; 
 float total;
 
 /*** Spawn parallel region ***/

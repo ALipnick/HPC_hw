@@ -30,7 +30,8 @@ void MMult1(long m, long n, long k, double *a, double *b, double *c) {
   for (long J = 1; J < N+1; J++){
     for (long I = 1; I < N+1; I++){
       for (long P = 1; P < N+1; P++){
-        #pragma omp colapse(2)
+        #pragma omp parallel
+        #pragma omp for collapse(2)
         for (long j = (J-1)*BLOCK_SIZE; j < J*BLOCK_SIZE; j++) {
           for (long i = (I-1)*BLOCK_SIZE; i < I*BLOCK_SIZE; i++) {
              double C_ij = c[i+j*m];

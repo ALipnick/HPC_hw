@@ -10,6 +10,9 @@
 #include <stdlib.h>
 #define N 1048
 
+//program would stall because two threads enter sections that use barrier so waited for remaining threads which never reached that barrier
+//commented out barrier in print_results
+
 int main (int argc, char *argv[]) 
 {
 int i, nthreads, tid, section;

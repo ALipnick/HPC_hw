@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #define N 1048
 
+//a was too big to be a doulbe array and have each thread make a copy so malloc'ed it and put in loop to prevent error, also added line to free it
+
 int main (int argc, char *argv[]) 
 {
 int nthreads, tid, i, j;
@@ -36,7 +38,7 @@ int nthreads, tid, i, j;
   /* For confirmation */
   printf("Thread %d done. Last element= %f\n",tid,a[(N-1)+N*(N-1)]);
 
-  free(a);
+  free(a); //free because malloc
 
   }  /* All threads join master thread and disband */
 
