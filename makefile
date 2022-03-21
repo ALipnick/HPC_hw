@@ -1,4 +1,4 @@
-all: val_test01_solved val_test02_solved MMult1 omp_solved2 omp_solved3 omp_solved4 omp_solved5 omp_solved6 jacobi-omp gs2D-omp
+all: val_test01_solved val_test02_solved MMult1 omp_solved2 omp_solved3 omp_solved4 omp_solved5 omp_solved6 jacobi2D-omp gs2D-omp
 
 val_test01_solved: val_test01_solved.cpp
 	g++ -g val_test01_solved.cpp -o val_test01_solved #&& valgrind --leak-check=full 
