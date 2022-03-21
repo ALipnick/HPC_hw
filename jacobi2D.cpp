@@ -1,13 +1,11 @@
 //things to include
 #include "utils.h"
-//#include <math.h>
 #include <cmath>
 #include <omp.h>
 
-
 int main(int argc, char** argv){
-	int max_iter = 50000;
-	int res_factor = 1000;
+	int max_iter = 5000;
+	int res_factor = 10000;
 
 	//int N = read_option<long>("-N", argc, argv);
 	//int num_of_threads = read_option<long>("-T", argc, argv);
@@ -28,7 +26,7 @@ int main(int argc, char** argv){
 	double h_2 = ((double)1)/((N+1)*(N+1)); // h^2
 	double residual = N; //calc starting residual
 	double tolerance = residual/res_factor; //calc tolerance to compare against
-	printf("\nintial residual = %f so tolerance = %f\n",residual, tolerance); 
+	printf("\ninitial residual = %f so tolerance = %f\n",residual, tolerance); 
 	int iter;
 	
 	Timer t; // so we can time how long everything takes
