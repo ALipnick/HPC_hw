@@ -11,11 +11,11 @@ int main(int argc, char** argv){
 
 	//int N = read_option<long>("-N", argc, argv);
 	//int num_of_threads = read_option<long>("-T", argc, argv);
-	//int max_num_threads = omp_get_num_threads();
-	//num_of_threads = min(num_of_threads, max_num_threads);
-	
-	int N = 100;
+	int N = 500;
 	int num_of_threads = 16;
+	
+	int max_num_threads = omp_get_max_threads();
+	num_of_threads = std::min(num_of_threads, max_num_threads);
 	
 	double* u = (double*) malloc((N+2) * (N+2) * sizeof(double)); // N+2 x N+2 grid with 0 boundary
 	double* u_new = (double*) malloc((N+2) * (N+2) * sizeof(double));	
@@ -36,7 +36,9 @@ int main(int argc, char** argv){
 	for (iter = 0; iter < max_iter; iter++) {//iterate
 		//update u using jacobi
 		//loop through and solve for u_new with u
+		#ifdef _OPENMP
 		#pragma omp parallel for collapse(2) num_threads(num_of_threads)
+		#endif
 		for (int i = 1; i<N+1; i++){
 			for (int j = 1; j<N+1; j++){
 				u_new[i+j*(N+2)] = 0.25*(h_2 
@@ -48,7 +50,9 @@ int main(int argc, char** argv){
 		
 		//now loop through and calc residual and set u to u_new
 		residual = 0;
+		#ifdef _OPENMP
 		#pragma omp parallel for collapse(2) reduction(+:residual) num_threads(num_of_threads)
+		#endif
 		for (int i = 1; i<N+1; i++){
 			for (int j = 1; j<N+1; j++){
 				u[i+j*(N+2)] = u_new[i+j*(N+2)];

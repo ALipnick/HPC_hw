@@ -30,19 +30,28 @@ int main(int argc, char** argv){
 	for (iter = 0; iter < max_iter; iter++) {//iterate
 		//update u using jacobi
 		//loop through and solve for u_new with u
-		
-		for (int i = 1; i<N+1; i++){
-			for (int j = 1; j<N+1; j++){
-				u_new[i+j*(N+2)] = 0.25*(h_2 
-					+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
-					+ u[(i+1)+(j)*(N+2)] + u[(i)+(j+1)*(N+2)] );
-			}
-			
-		}
+		#pragma omp parallel for collapse (2) num_threads(num_of_threads)
+		// for (int i = 1; i<N+1; i+=2){
+		// 	for (int j = 1; j<N+1; j++){
+		// 		u_new[i+j*(N+2)] = 0.25*(h_2 
+		// 			+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
+		// 			+ u[(i+1)+(j)*(N+2)] + u[(i)+(j+1)*(N+2)] );
+		// 	}
+		// }
+		// #pragma omp parallel for collapse (2) num_threads(num_of_threads)
+		// for (int i = 1; i<N+1; i++){
+		// 	for (int j = 1; j<N+1; j++){
+		// 		u_new[i+j*(N+2)] = 0.25*(h_2 
+		// 			+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
+		// 			+ u[(i+1)+(j)*(N+2)] + u[(i)+(j+1)*(N+2)] );
+		// 	}
+		// }
 		
 		//now loop through and calc residual and set u to u_new
 		residual = 0;
+		#ifdef _OPENMP
 		#pragma omp parallel for collapse (2) reduction(+:residual)
+		#endif
 		for (int i = 1; i<N+1; i++){
 			for (int j = 1; j<N+1; j++){
 				u[i+j*(N+2)] = u_new[i+j*(N+2)];
