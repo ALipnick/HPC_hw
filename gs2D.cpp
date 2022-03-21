@@ -9,8 +9,8 @@ int main(int argc, char** argv){
 
 	//int N = read_option<long>("-N", argc, argv);
 	//int num_of_threads = read_option<long>("-T", argc, argv);
-	int N = 1000;
-	int num_of_threads = 1;
+	int N = 500;
+	int num_of_threads = 16;
 
 	int max_num_threads = omp_get_max_threads();
 	num_of_threads = std::min(num_of_threads, max_num_threads);
