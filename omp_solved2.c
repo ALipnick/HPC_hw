@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
 int main (int argc, char *argv[]) 
 {
 int nthreads, i, tid; //tid should not be global variable but different for each thread
@@ -30,10 +31,9 @@ float total;
 
   /* do some work */
   total = 0.0;
-  #pragma omp for schedule(dynamic,10)
+  //#pragma omp for schedule(dynamic, 10) //doing this messes up the total
   for (i=0; i<1000000; i++) 
-     total = total + i*1.0;
-
+    total = total + i*1.0;
   printf ("Thread %d is done! Total= %e\n",tid,total);
 
   } /*** End of parallel region ***/
