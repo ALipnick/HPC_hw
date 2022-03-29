@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "utils.h"
 #include "intrin-wrapper.h"
+#include <math.h>
 
 // Headers for intrinsics
 #ifdef __SSE__
@@ -23,27 +24,73 @@ static constexpr double c9  =  1/(((double)2)*3*4*5*6*7*8*9);
 static constexpr double c11 = -1/(((double)2)*3*4*5*6*7*8*9*10*11);
 // sin(x) = x + c3*x^3 + c5*x^5 + c7*x^7 + x9*x^9 + c11*x^11
 
+// add cos coeffs for expanding sin4_taylor outside of [-pi/4, pi/4]
+// coefficients in the Taylor series expansion of cos(x)
+static constexpr double c2  = -1/((double)2);
+static constexpr double c4  =  1/(((double)2)*3*4);
+static constexpr double c6  = -1/(((double)2)*3*4*5*6);
+static constexpr double c8 =   1/(((double)2)*3*4*5*6*7*8);
+static constexpr double c10 = -1/(((double)2)*3*4*5*6*7*8*9*10);
+static constexpr double c12 =  1/(((double)2)*3*4*5*6*7*8*9*10*11*12);
+// cos(x) = c2*x^2 + c4*x^4 + c6*x^6 + x8*x^8 + c10*x^10 + c12 *x^12
+
 void sin4_reference(double* sinx, const double* x) {
   for (long i = 0; i < 4; i++) sinx[i] = sin(x[i]);
 }
 
 void sin4_taylor(double* sinx, const double* x) {
   for (int i = 0; i < 4; i++) {
-    double x1  = x[i];
-    double x2  = x1 * x1;
-    double x3  = x1 * x2;
-    double x5  = x3 * x2;
-    double x7  = x5 * x2;
-    double x9  = x7 * x2;
-    double x11 = x9 * x2;
+    //in order to solve for arbitrary x we use the fact that 
+    //we can instead calculate sin or cos of y = x + n*pi/2
+    //where n is choosen to put y in [-pi/4, pi/4]
+    //then we look at r = n%4 and for r = 0,1,2,3,-1,-2,-3 we take
+    //sin(y), cos(y), -sin(y), -cos(y), -cos(y), -sin(y), cos(y) respectively
+    //this result is derived from Euler's identiy applied to
+    //exp(i(x+n pi/2)) = i^n exp(i x) then we take the imaginary part
+    // to do that we use that i^2 = -1 and i^-1 = -i
 
-    double s = x1;
-    s += x3  * c3;
-    s += x5  * c5;
-    s += x7  * c7;
-    s += x9  * c9;
-    s += x11 * c11;
-    sinx[i] = s;
+    double x1  = x[i];
+    int n = floor( (x1 + M_PI/4) / (M_PI/2) ); // find n 
+    int r = n%4; // find r
+    x1 = x1 - n*(M_PI/2);
+    double x2  = x1 * x1;
+    if (r%2 == 0) {
+      double x3  = x1 * x2;
+      double x5  = x3 * x2;
+      double x7  = x5 * x2;
+      double x9  = x7 * x2;
+      double x11 = x9 * x2;
+
+      double s = x1;
+      s += x3  * c3;
+      s += x5  * c5;
+      s += x7  * c7;
+      s += x9  * c9;
+      s += x11 * c11;
+      if(r == 2 or r == -2){
+        s = -s;
+      }
+      sinx[i] = s;
+    }
+    else {
+      double x4  = x2  * x2;
+      double x6  = x4  * x2;
+      double x8  = x6  * x2;
+      double x10 = x8  * x2;
+      double x12 = x10 * x2;
+
+      double s = 1;
+      s += x2  * c2;
+      s += x4  * c4;
+      s += x6  * c6;
+      s += x8  * c8;
+      s += x10 * c10;
+      s += x12 * c12;
+      if(r == 3 or r == -1){
+        s = -s;
+      }
+      sinx[i] = s;
+    }
   }
 }
 
@@ -51,26 +98,34 @@ void sin4_intrin(double* sinx, const double* x) {
   // The definition of intrinsic functions can be found at:
   // https://software.intel.com/sites/landingpage/IntrinsicsGuide/#
 #if defined(__AVX__)
-  __m256d x1, x2, x3;
+  __m256d x1, x2, x3, x5, x7, x9, x11;
   x1  = _mm256_load_pd(x);
   x2  = _mm256_mul_pd(x1, x1);
   x3  = _mm256_mul_pd(x1, x2);
+  x5  = _mm256_mul_pd(x3, x2);
+  x7  = _mm256_mul_pd(x5, x2);
+  x9  = _mm256_mul_pd(x7, x2);
+  x11 = _mm256_mul_pd(x9, x2);
 
   __m256d s = x1;
   s = _mm256_add_pd(s, _mm256_mul_pd(x3 , _mm256_set1_pd(c3 )));
+  s = _mm256_add_pd(s, _mm256_mul_pd(x5 , _mm256_set1_pd(c5 )));
+  s = _mm256_add_pd(s, _mm256_mul_pd(x7 , _mm256_set1_pd(c7 )));
+  s = _mm256_add_pd(s, _mm256_mul_pd(x9 , _mm256_set1_pd(c9 )));
+  s = _mm256_add_pd(s, _mm256_mul_pd(x11, _mm256_set1_pd(c11)));
   _mm256_store_pd(sinx, s);
-#elif defined(__SSE2__)
-  constexpr int sse_length = 2;
-  for (int i = 0; i < 4; i+=sse_length) {
-    __m128d x1, x2, x3;
-    x1  = _mm_load_pd(x+i);
-    x2  = _mm_mul_pd(x1, x1);
-    x3  = _mm_mul_pd(x1, x2);
+// #elif defined(__SSE2__)
+//   constexpr int sse_length = 2;
+//   for (int i = 0; i < 4; i+=sse_length) {
+//     __m128d x1, x2, x3;
+//     x1  = _mm_load_pd(x+i);
+//     x2  = _mm_mul_pd(x1, x1);
+//     x3  = _mm_mul_pd(x1, x2);
 
-    __m128d s = x1;
-    s = _mm_add_pd(s, _mm_mul_pd(x3 , _mm_set1_pd(c3 )));
-    _mm_store_pd(sinx+i, s);
-  }
+//     __m128d s = x1;
+//     s = _mm_add_pd(s, _mm_mul_pd(x3 , _mm_set1_pd(c3 )));
+//     _mm_store_pd(sinx+i, s);
+//   }
 #else
   sin4_reference(sinx, x);
 #endif
