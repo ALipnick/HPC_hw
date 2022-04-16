@@ -19,10 +19,11 @@ void scan_omp(long* prefix_sum, const long* A, long n) {
   // then waits until the section before it is done with its last value
   // and adds that section's last value to all of it values
   // starting with it's last value so the next section can start sooner
-  int num_of_threads = 16; //assume N is dividible by num_threads
+  int num_of_threads = 4; //assume N is dividible by num_threads
   //                      so possible values are 1,2,4,5,8,10,16
   //otherwise would have to do some work to separate
   long k = floor(n/num_of_threads); //how many terms each thread takes
+  // long final_terms[num_of_threads]; //will store final values so each thread can use for updating parallel compute
   #pragma omp parallel num_threads(num_of_threads)
   {
     int thread_num = omp_get_thread_num();
@@ -30,12 +31,22 @@ void scan_omp(long* prefix_sum, const long* A, long n) {
       prefix_sum[0] = 0;
     }
     else{
-      prefix_sum[thread_num * k] = A[thread_num * k -1]; //set prefix_sum[thread_num * k] = A[thread_num*k]
+      prefix_sum[thread_num * k] = A[thread_num * k - 1]; //set prefix_sum[thread_num * k] = A[thread_num*k]
     }
     for (long i = thread_num*k+1; i < (thread_num+1)*k; ++i) {
       prefix_sum[i] = prefix_sum[i-1] + A[i-1]; //add A[i-1]
     }
+
+    //final_terms[thread_num] = prefix_sum[(thread_num + 1) * k - 1];
+
     #pragma omp barrier //don't add results to next thread's values unil all are done
+    // long correction = 0;
+    // for (long i = 0; i < thread_num; ++i) {
+    //   correction += final_terms[i];
+    // }
+    // for (long i = thread_num*k; i < (thread_num + 1) * k; ++i){
+    //   prefix_sum[i] = prefix_sum[i] + correction;
+    // }
 
     if (thread_num == 0){
       for (long i = 1; i<num_of_threads; ++i){
@@ -69,7 +80,7 @@ int main() {
 
   long err = 0;
   for (long i = 0; i < N; i++) err = std::max(err, std::abs(B0[i] - B1[i]));
-  printf("error = %ld\n", err);
+  printf("error = %ld\n", err);  
 
   free(A);
   free(B0);
