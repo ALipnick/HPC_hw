@@ -86,7 +86,7 @@ int main(void) {
   //jacobi2D(u_new, u, temp, h, N,max_iter);
   for (long iter = 0; iter < max_iter; iter++) {
 	jacobi2D_step(u_new,  u,  h, N);
-	*temp = *u;
+  	*temp = *u;
     *u = *u_new;
     *u_new = *temp;
 }
@@ -128,8 +128,6 @@ for ( long i = 0; i < (N+2)*(N+2); i++ ) {
   double err = 0;
   for (long i = 0; i < (N+2) * (N+2); i++) err += fabs(u_ref[i]-u_new[i]);
   printf("Error = %f\n", err);
-
-  //printf("b[0] = %f\n", b[0]);
 
   cudaFree(u_d);
   cudaFree(u_new_d);
