@@ -7,7 +7,7 @@
 
 #define THREADS_PER_BLOCK 1024
 
-void MVmult(double* A, const double* x, const double* b, long n, long m){
+void MVmult(double* A, const double* x, double* b, long n, long m){
   #pragma omp parallel for schedule (static)
   for (long i = 0; i < m; i++ ) {
     double sum = 0.0;
@@ -19,14 +19,13 @@ void MVmult(double* A, const double* x, const double* b, long n, long m){
 }
 
 __global__
-void MVmult_kernel(double* A, const double* x, const double* b, long n, long m){
+void MVmult_kernel(const double* A, const double* x, double* b, long n, long m){
   //__shared__ double prods[THREADS_PER_BLOCK];
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  
   double sum = 0.0;
-  if (idx < m ){
-    for (int i = 0; i < n; i++ ) {
-      sum += A[i*m+idx]*x[i];
+  if (idx < m ) {
+    for ( long i = 0; i < n; i++ ) {
+      sum += A[idx*n + i] * x[i];
     }
   b[idx] = sum;
   }
@@ -43,7 +42,7 @@ void Check_CUDA_Error(const char *message){
 int main() {
   //use Ax = b for matrix vector mult
   long n = 1024;
-  long m = 1024;
+  long m = 1000;
   double* A = (double*) malloc(n * m * sizeof(double));
   double* x = (double*) malloc(n * sizeof(double));
   double* b = (double*) malloc(m * sizeof(double));
@@ -58,7 +57,7 @@ int main() {
   }
 
   double tt = omp_get_wtime();
-  MVmult(A, x, b_ref, n,m);
+  MVmult(A, x, b_ref, n, m);
   printf("CPU %f s\n", omp_get_wtime()-tt);
 
   double *A_d, *x_d, *b_d;
@@ -71,7 +70,7 @@ int main() {
   cudaMemcpy(A_d, A, n*m*sizeof(double), cudaMemcpyHostToDevice);
   cudaMemcpy(x_d, x, n*sizeof(double), cudaMemcpyHostToDevice);
   double ttinner = omp_get_wtime();
-  MVmult_kernel<<<m/THREADS_PER_BLOCK,THREADS_PER_BLOCK>>>(A_d, x_d, b_d, n,m);
+  MVmult_kernel<<<m/THREADS_PER_BLOCK,THREADS_PER_BLOCK>>>(A_d, x_d, b_d, n, m);
   cudaDeviceSynchronize();
   ttinner = omp_get_wtime() - ttinner;
   cudaMemcpy(b, b_d, sizeof(double), cudaMemcpyDeviceToHost);
