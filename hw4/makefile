@@ -1,17 +1,10 @@
-CXX = g++
-CXXFLAGS = -std=c++11 -O3 -march=native -fopenmp
+all: ip MVmult jacobi2D
 
-# turning off auto-vectorization since this can make hand-vectorized code slower
-CXXFLAGS += -fno-tree-vectorize
+ip: ip.cu
+	nvcc -arch=sm_61 ip.cu -o ip -Xcompiler -fopenmp
 
-TARGETS = $(basename $(wildcard *.cpp))
+MVmult: MVmult.cu
+	nvcc -arch=sm_61 MVmult.cu -o MVmult -Xcompiler -fopenmp
 
-all : $(TARGETS)
-
-%:%.cpp *.h
-	$(CXX) $(CXXFLAGS) $< $(LIBS) -o $@
-
-clean:
-	-$(RM) $(TARGETS) *~
-
-.PHONY: all, clean
+jacobi2D: jacobi2D.cu
+	nvcc -arch=sm_61 jacobi2D.cu -o jacobi2D -Xcompiler -fopenmp
