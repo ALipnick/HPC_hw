@@ -1,9 +1,10 @@
-// $ nvcc -arch=sm_61 ip_gpu.cu -o gpu03 -Xcompiler -fopenmp
+// $ nvcc -arch=sm_61 ip.cu -o ip -Xcompiler -fopenmp
 // flag -Xcompiler passes next flag directly to compiler
 #include <algorithm>
 #include <stdio.h>
 #include <omp.h>
 #include <string>
+#include <random>
 
 #define THREADS_PER_BLOCK 1024
 
@@ -50,8 +51,8 @@ int main() {
   double* z_ref = (double*) malloc(sizeof(double));
   #pragma omp parallel for schedule(static)
   for (long i = 0; i < N; i++) {
-    x[i] = 1;
-    y[i] = 1;
+    x[i] = rand() % 10 -10;
+    y[i] = rand() % 10 -10;
   }
   *z = 0.0;
   *z_ref = 0.0;
