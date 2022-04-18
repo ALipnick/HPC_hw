@@ -79,8 +79,8 @@ int main(void) {
 	}
   //calc necessary info
   double h = ((double)1)/((N+1)*(N+1)); // h^2
-  
-
+  dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
 
   double tt = omp_get_wtime();
   //jacobi2D(u_new, u, temp, h, N,max_iter);
@@ -114,8 +114,6 @@ for ( long i = 0; i < (N+2)*(N+2); i++ ) {
 
   double ttinner = omp_get_wtime();
   //jacobi2D_cuda(u_new, u, temp, h, N,max_iter);
-  dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
   for (long iter = 0; iter < max_iter; iter++) {
   	jacobi2D_step_kernel<<<GridDim, BlockDim>>>(u_new,  u,  h, N);
   	*temp = *u;
