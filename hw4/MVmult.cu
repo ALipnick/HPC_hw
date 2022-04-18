@@ -32,6 +32,24 @@ void MVmult_kernel(double* b, const double* A, const double* x, long m, long n) 
   }
 }
 
+// failed attempt to do all multiplications at the same time then sum
+// __global__ 
+// void MVmult_kernel(double* b, const double* A, const double* x, long m, long n) {
+//   __shared__ double prods[THREADS_PER_BLOCK]; //shared var for all producs
+//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
+//   if (idx < n*m){
+//     prods[idx] = A[idx] * b[idx%n];
+//   }
+//   __syncthreads();
+//   if ( idx < m) {
+//     double sum = 0.0;
+//     for ( int i = 0; i < n; i ++) {
+//       sum += prods[idx*n+i];
+//     }
+//     b[idx] = sum;
+//   }
+// }
+
 
 void Check_CUDA_Error(const char *message){
   cudaError_t error = cudaGetLastError();
