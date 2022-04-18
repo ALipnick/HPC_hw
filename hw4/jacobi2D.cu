@@ -1,5 +1,6 @@
 // $ nvcc -arch=sm_61 jacobi2D.cu -o jacobi2D -Xcompiler -fopenmp
 // flag -Xcompiler passes next flag directly to compiler
+
 #include <algorithm>
 #include <stdio.h>
 #include <omp.h>
@@ -25,32 +26,34 @@ void jacobi2D_step_kernel(double* u_new, const double* u, double h, long N) {
   int i = blockDim.x * blockIdx.x + threadIdx.x;
   int j = blockDim.y * blockIdx.y + threadIdx.y;
 
-  if ( (i < N+1) && (j < N+1) && (i > 0) && (j > 0) ) {
-    u_new[i+j*(N+2)] = 0.25*( h*h+ u[i-1+j*(N+2)]
-			  + u[i+(j-1)*(N+2)] + u[i+1+j*(N+2)] + u[i+(j+1)*(N+2)] );
+  if ( (i > 0) && (i < N+1) && (j > 0) && (j < N+1) ) {
+  	u_new[i+j*(N+2)] = 0.25*(h*h 
+			+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
+			+ u[(i+1)+(j)*(N+2)] + u[(i)+(j+1)*(N+2)] );
   }
 }
 
-void jacobi2D(double* u_new, double* u,  double* temp,double h, long N, long max_iter) {
-	for (long iter = 0; iter < max_iter; iter++) {
-		jacobi2D_step(u_new,  u,  h, N);
-		temp = u;
-    	u = u_new;
-    	u_new = temp;
-	}
-}
+//decided to just run for full maximum iterations because just comparing two ways
+// void jacobi2D(double* u_new, double* u,  double* temp,double h, long N, long max_iter) {
+// 	for (long iter = 0; iter < max_iter; iter++) {
+// 		jacobi2D_step(u_new,  u,  h, N);
+// 		*temp = *u;
+//     	*u = *u_new;
+//     	*u_new = *temp;
+// 	}
+// }
 
 
-void jacobi2D_cuda(double* u_new, double* u, double* temp, double h, long N, long max_iter) {
-  dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
-  for (long iter = 0; iter < max_iter; iter++) {
-  	jacobi2D_step_kernel<<<GridDim, BlockDim>>>(u_new,  u,  h, N);
-  	temp = u;
-    u = u_new;
-    u_new = temp;
-	}
-}
+// void jacobi2D_cuda(double* u_new, double* u, double* temp, double h, long N, long max_iter) {
+//   dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
+//   dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
+//   for (long iter = 0; iter < max_iter; iter++) {
+//   	jacobi2D_step_kernel<<<GridDim, BlockDim>>>(u_new,  u,  h, N);
+//   	*temp = *u;
+//     *u = *u_new;
+//     *u_new = *temp;
+// 	}
+// }
 
 
 
@@ -82,10 +85,16 @@ int main(void) {
 
 
   double tt = omp_get_wtime();
-  jacobi2D(u_new, u, temp, h, N, max_iter);
-  for ( long i = 0; i < (N+2)*(N+2); i++ ) {
+for (long iter = 0; iter < max_iter; iter++) {
+	jacobi2D_step(u_new,  u,  h, N);
+	*temp = *u;
+    *u = *u_new;
+    *u_new = *temp;
+}
+#pragma omp parallel for schedule(static)  
+for ( long i = 0; i < (N+2)*(N+2); i++ ) {
    u_ref[i] = u[i];
-  }
+ }
   printf("CPU %f s\n", omp_get_wtime()-tt);
 
   double *u_d, *u_new_d;
@@ -105,7 +114,15 @@ int main(void) {
   cudaMemcpy(u_new_d, u_new, (N+2) * (N+2) * sizeof(double), cudaMemcpyHostToDevice);
 
   double ttinner = omp_get_wtime();
-  jacobi2D_cuda(u_new, u, temp, h, N,max_iter);
+  //jacobi2D_cuda(u_new, u, temp, h, N,max_iter);
+  dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
+  dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
+  for (long iter = 0; iter < max_iter; iter++) {
+  	jacobi2D_step_kernel<<<GridDim, BlockDim>>>(u_new,  u,  h, N);
+  	*temp = *u;
+    *u = *u_new;
+    *u_new = *temp;
+}
   cudaDeviceSynchronize();
   ttinner = omp_get_wtime() - ttinner;
   cudaMemcpy(u_new, u_new_d, (N+2) * (N+2) * sizeof(double), cudaMemcpyDeviceToHost);
