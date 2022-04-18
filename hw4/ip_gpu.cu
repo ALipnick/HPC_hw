@@ -24,11 +24,11 @@ void vec_dot_kernel(double* c, const double* a, const double* b, long N){
   prods[threadIdx.x] = a[idx] * b[idx]; //each thread calcs a product
   __syncthreads(); //sync to make sure all relavent prods are calculated
   if (0 == threadIdx.x ) {
-    double sum = 0.0;
-    for ( int i = 0; i < THREADS_PER_BLOCK; i++ ) {
-      sum += prods[i];
-    }
-    atomicAdd(c,sum);
+  	double sum = 0.0;
+  	for ( int i = 0; i < THREADS_PER_BLOCK; i++ ) {
+  		sum += prods[i];
+  	}
+  	atomicAdd(c,sum);
   }
 
 }
