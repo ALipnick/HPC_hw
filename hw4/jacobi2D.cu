@@ -23,9 +23,8 @@ void jacobi2D_step(double* u_new, const double* u, double h, long N) {
 
 __global__ 
 void jacobi2D_step_kernel(double* u_new, const double* u, double h, long N) {
-  int i = blockDim.x * blockIdx.x + threadIdx.x;
-  int j = blockDim.y * blockIdx.y + threadIdx.y;
-
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
   if ( (i > 0) && (i < N+1) && (j > 0) && (j < N+1) ) {
   	u_new[i+j*(N+2)] = 0.25*(h*h 
 			+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
@@ -77,7 +76,6 @@ int main(void) {
   #pragma omp parallel for schedule(static)
   for (long i = 0; i < (N+2)*(N+2); i++){ //initialize values
 		u[i] = 0;
-		u_new[i] = 0;
 	}
   //calc necessary info
   double h = ((double)1)/((N+1)*(N+1)); // h^2
@@ -85,7 +83,8 @@ int main(void) {
 
 
   double tt = omp_get_wtime();
-for (long iter = 0; iter < max_iter; iter++) {
+  //jacobi2D(u_new, u, temp, h, N,max_iter);
+  for (long iter = 0; iter < max_iter; iter++) {
 	jacobi2D_step(u_new,  u,  h, N);
 	*temp = *u;
     *u = *u_new;
