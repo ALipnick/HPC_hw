@@ -14,16 +14,22 @@ void MVmult(double* A, const double* x, const double* b, long n, long m){
     for ( long j = 0; j < n; j++ ) {
       sum += A[i*n + j] * x[j];
     }
-    b[i] = sum;
+  b[i] = sum;
   }
 }
 
 __global__
 void MVmult_kernel(double* A, const double* x, const double* b, long n, long m){
-  int col = blockIdx.x * blockDim.x + threadIdx.x;
-  int eoq = blockIdx.y * blockDim.y + threadIdx.y;
+  //__shared__ double prods[THREADS_PER_BLOCK];
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  
   double sum = 0.0;
-  if (id )
+  if (idx < m ){
+    for (int i = 0; i < n; i++ ) {
+      sum += A[i*m+idx]*x[i];
+    }
+  b[idx] = sum;
+  }
 }
 
 void Check_CUDA_Error(const char *message){
@@ -50,13 +56,9 @@ int main() {
   for (long i = 0; i< n; i++) {
     x[i] = 1;
   }
-  #pragma omp parallel for schedule(static)
-  for (long i = 0; i < m; i++) {
-    b_ref[i];
-  }
 
   double tt = omp_get_wtime();
-  vec_dot(b_ref, A, x, n,m);
+  MVmult(A, x, b_ref, n,m);
   printf("CPU %f s\n", omp_get_wtime()-tt);
 
   double *A_d, *x_d, *b_d;
@@ -69,14 +71,14 @@ int main() {
   cudaMemcpy(A_d, A, n*m*sizeof(double), cudaMemcpyHostToDevice);
   cudaMemcpy(x_d, x, n*sizeof(double), cudaMemcpyHostToDevice);
   double ttinner = omp_get_wtime();
-  MVmult_kernel<<<N/THREADS_PER_BLOCK,THREADS_PER_BLOCK>>>(A_d, x_d, b_d, n,m);
+  MVmult_kernel<<<m/THREADS_PER_BLOCK,THREADS_PER_BLOCK>>>(A_d, x_d, b_d, n,m);
   cudaDeviceSynchronize();
   ttinner = omp_get_wtime() - ttinner;
   cudaMemcpy(b, b_d, sizeof(double), cudaMemcpyDeviceToHost);
   printf("GPU %f s, %f s\n", omp_get_wtime()-tt, ttinner);
 
   double err = 0;
-  for (long i = 0; i < N; i++) err += fabs(b[i]-b_ref[i]);
+  for (long i = 0; i < m; i++) err += fabs(b[i]-b_ref[i]);
   printf("Error = %f\n", err);
 
   cudaFree(A_d);
