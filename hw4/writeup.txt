@@ -34,3 +34,21 @@ Error = 1585536123.000000
 CPU 0.012528 s
 GPU 0.167638 s, 0.000040 s
 Error = 1585507719.000000
+
+3.
+Reminder: our project is on Stochastic gradient descent. Specifically comparing it to standard gradient descent for the LASSO problem.
+
+For the project our group completed the following so far:
+1. create a git repository
+2. created some basic subfunctions that will be used in the descent methods
+3. wote up standard gradient descent
+4. wrote up standard stocastic gradient descent
+
+One problem we ran into is that we weren't sure how to include the regularization term in the stocastic gradient descent
+(should the full term be in each update? should we have n+m functions to optimize over?)
+
+Our next steps are to
+1. write up a few modificed stocastic gradient descent functions to compare
+2. impliment sparsity in our matrix
+3. add the regularization terms
+4. compare how the methods perform with varying parameter values and matrix sizes
