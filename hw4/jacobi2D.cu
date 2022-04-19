@@ -7,7 +7,7 @@
 #include <string>
 #include <random>
 
-#define BLOCK_SIZE 32
+#define THREADS_PER_BLOCK 32
 
 void jacobi2D_step(double* u_new, const double* u, double h, long N) {
   #pragma omp parallel for collapse(2)
@@ -44,8 +44,8 @@ void jacobi2D_step_kernel(double* u_new, const double* u, double h, long N) {
 
 
 // void jacobi2D_cuda(double* u_new, double* u, double* temp, double h, long N, long max_iter) {
-//   dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
-//   dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
+//   dim3 BlockDim(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+//   dim3 GridDim(N/THREADS_PER_BLOCK, N/THREADS_PER_BLOCK);
 //   for (long iter = 0; iter < max_iter; iter++) {
 //   	jacobi2D_step_kernel<<<GridDim, BlockDim>>>(u_new,  u,  h, N);
 //   	*temp = *u;
@@ -79,8 +79,8 @@ int main(void) {
 	}
   //calc necessary info
   double h = ((double)1)/((N+1)*(N+1)); // h^2
-  dim3 BlockDim(BLOCK_SIZE, BLOCK_SIZE);
-  dim3 GridDim(N/BLOCK_SIZE, N/BLOCK_SIZE);
+  dim3 BlockDim(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+  dim3 GridDim(N/THREADS_PER_BLOCK, N/THREADS_PER_BLOCK);
 
   double tt = omp_get_wtime();
   //jacobi2D(u_new, u, temp, h, N,max_iter);

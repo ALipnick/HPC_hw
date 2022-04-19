@@ -31,7 +31,6 @@ void vec_dot_kernel(double* c, const double* a, const double* b, long N){
     }
     atomicAdd(c,sum);
   }
-
 }
 
 void Check_CUDA_Error(const char *message){

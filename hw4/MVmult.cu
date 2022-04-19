@@ -6,9 +6,13 @@
 #include <string>
 #include <random>
 
-#define THREADS_PER_BLOCK 1024
 
-void MVmult(double* b, const double* A, const double* x, long m, long n) {
+// we will assume that m and n are divisible by THREADS_PER_BLOCK
+#define THREADS_PER_BLOCK 1024
+#define m THREADS_PER_BLOCK*10
+#define n THREADS_PER_BLOCK*5
+
+void MVmult(double* b, const double* A, const double* x) {
   #pragma omp parallel for schedule(static)
   for ( long i = 0; i < m; i++ ) {
     double sum = 0;
@@ -21,7 +25,7 @@ void MVmult(double* b, const double* A, const double* x, long m, long n) {
 
 
 __global__ 
-void MVmult_kernel(double* b, const double* A, const double* x, long m, long n) {
+void MVmult_kernel(double* b, const double* A, const double* x) {
   int idx = threadIdx.x + blockIdx.x * blockDim.x;
   double sum = 0.0;
   if ( idx < m ) {
@@ -32,23 +36,23 @@ void MVmult_kernel(double* b, const double* A, const double* x, long m, long n) 
   }
 }
 
-// failed attempt to do all multiplications at the same time then sum
-// __global__ 
-// void MVmult_kernel(double* b, const double* A, const double* x, long m, long n) {
-//   __shared__ double prods[THREADS_PER_BLOCK]; //shared var for all producs
-//   int idx = threadIdx.x + blockIdx.x * blockDim.x;
-//   if (idx < n*m){
-//     prods[idx] = A[idx] * b[idx%n];
-//   }
-//   __syncthreads();
-//   if ( idx < m) {
-//     double sum = 0.0;
-//     for ( int i = 0; i < n; i ++) {
-//       sum += prods[idx*n+i];
-//     }
-//     b[idx] = sum;
-//   }
-// }
+
+__global__ 
+void MVmult_kernel2(double* b, const double* A, const double* x) {
+  __shared__ double prods[THREADS_PER_BLOCK]; //shared var for all products
+  int idx = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = idx % n; //column
+  int i = idx /n; //row
+  // printf("%d,%d,%d\n",idx, i,j);
+  prods[threadIdx.x] = A[idx]*x[j];
+  if (0 == threadIdx.x ) {
+    double sum = 0;
+    for ( int k = 0; k < THREADS_PER_BLOCK; k++ ) {
+      sum += prods[k];
+    }
+    atomicAdd(&b[i],sum);
+  }
+}
 
 
 void Check_CUDA_Error(const char *message){
@@ -62,8 +66,6 @@ void Check_CUDA_Error(const char *message){
 
 int main(void) {
   // notation: Ax = b with A m by n
-  long m = 1024;
-  long n = 1024;
   double* A = (double*) malloc( m * n * sizeof(double));
   double* x = (double*) malloc( n * sizeof(double));
   double* b = (double*) malloc( m * sizeof(double));
@@ -78,7 +80,7 @@ int main(void) {
   }
 
   double tt = omp_get_wtime();
-  MVmult(b_ref, A, x, m, n);
+  MVmult(b_ref, A, x);
   printf("CPU %f s\n", omp_get_wtime()-tt);
 
   double *A_d, *x_d, *b_d;
@@ -92,7 +94,8 @@ int main(void) {
   cudaMemcpy(x_d, x, n *sizeof(double), cudaMemcpyHostToDevice);
 
   double ttinner = omp_get_wtime();
-  MVmult_kernel<<< m/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>(b_d, A_d, x_d, m, n);
+  // MVmult_kernel<<< m/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>(b_d, A_d, x_d);
+  MVmult_kernel2<<<n*m/THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(b_d, A_d, x_d);
   cudaDeviceSynchronize();
   ttinner = omp_get_wtime() - ttinner;
   cudaMemcpy(b, b_d, m *sizeof(double), cudaMemcpyDeviceToHost);
