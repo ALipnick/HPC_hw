@@ -7,7 +7,7 @@
 #include <string>
 #include <random>
 
-#define THREADS_PER_BLOCK 32
+#define THREADS_PER_BLOCK 32 //32 = sqrt(1024) which is max size
 
 void jacobi2D_step(double* u_new, double* u, double h, long N) {
   #pragma omp parallel for collapse(2)
@@ -82,8 +82,8 @@ void Check_CUDA_Error(const char *message){
 
 
 int main(void) {
-  int max_iter = 10000;
-  int N = 512;
+  int max_iter = 1000;
+  int N = THREADS_PER_BLOCK*16;
  
   double* u = (double*) malloc((N+2) * (N+2) * sizeof(double)); // N+2 x N+2 grid with 0 boundary
   double* u_new = (double*) malloc((N+2) * (N+2) * sizeof(double));
@@ -136,7 +136,7 @@ int main(void) {
   for (long i = 0; i < (N+2) * (N+2); i++) {
   	err += fabs(u_ref[i]-u[i]);
   }
-  	 printf("Error = %f\n", err);
+  printf("Error = %f\n", err);
 
   cudaFree(u_d);
   cudaFree(u_new_d);
