@@ -9,8 +9,8 @@
 
 // we will assume that m and n are divisible by THREADS_PER_BLOCK
 #define THREADS_PER_BLOCK 1024
-#define m THREADS_PER_BLOCK*10
-#define n THREADS_PER_BLOCK*5
+#define m (THREADS_PER_BLOCK * 10)
+#define n (THREADS_PER_BLOCK * 5)
 
 void MVmult(double* b, const double* A, const double* x) {
   #pragma omp parallel for schedule(static)
@@ -37,14 +37,15 @@ void MVmult_kernel(double* b, const double* A, const double* x) {
 }
 
 
+// second idea where all products are calculated in parallel, this ended up being slower.
 __global__ 
 void MVmult_kernel2(double* b, const double* A, const double* x) {
   __shared__ double prods[THREADS_PER_BLOCK]; //shared var for all products
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
-  int j = idx % n; //column
-  int i = idx /n; //row
-  // printf("%d,%d,%d\n",idx, i,j);
+  int j = idx%n; //column
+  int i = idx / n; //row
   prods[threadIdx.x] = A[idx]*x[j];
+  __syncthreads(); //sync to make sure all relavent prods are calculated
   if (0 == threadIdx.x ) {
     double sum = 0;
     for ( int k = 0; k < THREADS_PER_BLOCK; k++ ) {
@@ -94,8 +95,8 @@ int main(void) {
   cudaMemcpy(x_d, x, n *sizeof(double), cudaMemcpyHostToDevice);
 
   double ttinner = omp_get_wtime();
-  // MVmult_kernel<<< m/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>(b_d, A_d, x_d);
-  MVmult_kernel2<<<n*m/THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(b_d, A_d, x_d);
+  MVmult_kernel<<< m/THREADS_PER_BLOCK, THREADS_PER_BLOCK >>>(b_d, A_d, x_d);
+  // MVmult_kernel2<<<n*m/THREADS_PER_BLOCK, THREADS_PER_BLOCK>>>(b_d, A_d, x_d);
   cudaDeviceSynchronize();
   ttinner = omp_get_wtime() - ttinner;
   cudaMemcpy(b, b_d, m *sizeof(double), cudaMemcpyDeviceToHost);
