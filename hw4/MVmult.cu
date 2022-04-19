@@ -37,7 +37,7 @@ void MVmult_kernel(double* b, const double* A, const double* x) {
 }
 
 
-// second idea where all products are calculated in parallel, this ended up being slower.
+// second idea where all products are calculated in parallel, this ended up being slower.*
 __global__ 
 void MVmult_kernel2(double* b, const double* A, const double* x) {
   __shared__ double prods[THREADS_PER_BLOCK]; //shared var for all products

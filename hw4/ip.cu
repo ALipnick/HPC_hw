@@ -75,8 +75,8 @@ int main() {
   cudaMemcpy(z, z_d, sizeof(double), cudaMemcpyDeviceToHost);
   printf("GPU %f s, %f s\n", omp_get_wtime()-tt, ttinner);
 
-  printf("z_ref = %f\n", *z_ref );
-  printf("z = %f\n", *z );
+  // printf("z_ref = %f\n", *z_ref );
+  // printf("z = %f\n", *z );
   printf("Error = %f\n", fabs(*z - *z_ref));
 
   cudaFree(x_d);
