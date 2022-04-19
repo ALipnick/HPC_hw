@@ -1,0 +1,36 @@
+1. 
+Below are the results from running the MVmult.cu code on my laptop as well as on the 5 different GPUs on the Courant Servers.
+For some reason gpus 1,4, and 5 had errors while the others did not. I don't think this is an issue with memory because gpus 4 and 5 have large memories.
+The memory bandwidth is inversely proportional to the second time in the GPU row of the output.
+Here we see varying bandwidths depending on the GPU use.
+In partular we see very high bandwidths for the GPU's with large errors leading me to believe that this may be the culprit.
+
+andrew@LAPTOP-6R1C4SQV:/mnt/c/Users/andre/Desktop/Scientific Computing/hw/code/GitHub/hw4$ ./MVmult
+CPU 0.017448 s
+GPU 0.088305 s, 0.012097 s
+Error = 0.000000
+
+(base) [adl592@cuda1 hw4]$ ./MVmult
+CPU 0.018131 s
+GPU 0.060436 s, 0.000032 s
+Error = 1585387610.000000
+
+[adl592@cuda2 hw4]$ ./MVmult
+CPU 0.024150 s
+GPU 0.060906 s, 0.010139 s
+Error = 0.000000
+
+(base) [adl592@cuda3 hw4]$ ./MVmult
+CPU 0.031319 s
+GPU 0.098933 s, 0.005073 s
+Error = 0.000000
+
+(base) [adl592@cuda4 hw4]$ ./MVmult
+CPU 0.015242 s
+GPU 0.092405 s, 0.000016 s
+Error = 1585536123.000000
+
+(base) [adl592@cuda5 hw4]$ ./MVmult
+CPU 0.012528 s
+GPU 0.167638 s, 0.000040 s
+Error = 1585507719.000000
