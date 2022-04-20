@@ -16,7 +16,6 @@ void jacobi2D_step(double* u_new, double* u, double h, long N) {
   		u_new[i+j*(N+2)] = 0.25*(h*h 
 			+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
 			+ u[(i+1)+(j)*(N+2)] + u[(i)+(j+1)*(N+2)] );
-
 			}
 		}
   #pragma omp parallel for collapse(2)
@@ -29,16 +28,19 @@ void jacobi2D_step(double* u_new, double* u, double h, long N) {
 
 
 __global__ 
-void jacobi2D_step_kernel(double* u_new, double* u, double h, long N) {
+void jacobi2D_step_kernel(double* u_new_d, double* u_d, double h, long N) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   int j = blockIdx.y * blockDim.y + threadIdx.y;
   if ( (i > 0) && (i < N+1) && (j > 0) && (j < N+1) ) {
-  	u_new[i+j*(N+2)] = 0.25*(h*h 
-			+ u[(i-1)+(j)*(N+2)] + u[(i)+(j-1)*(N+2)]
-			+ u[(i+1)+(j)*(N+2)] + u[(i)+(j+1)*(N+2)] );
+  	u_new_d[i+j*(N+2)] = 0.25*(h*h 
+			+ u_d[(i-1)+(j)*(N+2)] + u_d[(i)+(j-1)*(N+2)]
+			+ u_d[(i+1)+(j)*(N+2)] + u_d[(i)+(j+1)*(N+2)] );
   }
   __syncthreads();
-  u[i+j*(N+2)] = u_new[i+j*(N+2)];  	
+  if ( (i > 0) && (i < N+1) && (j > 0) && (j < N+1) ) {
+  	u_d[i+j*(N+2)] = u_new_d[i+j*(N+2)]; 
+  }
+   	
 }
 
 double calc_residual(double* u, double h, long N) {
@@ -58,14 +60,12 @@ double calc_residual(double* u, double h, long N) {
 void jacobi2D(double* u_new, double* u, double h, long N, long max_iter) {
 	for (long iter = 0; iter < max_iter; iter++) {
 		jacobi2D_step(u_new,  u,  h, N);
-		// double residual = calc_residual( u, h, N);
-		// printf("residual = %f",residual);
 	}
 }
 
 
 void jacobi2D_cuda(double* u_new_d, double* u_d, double h, long N, long max_iter) {
-  dim3 GridDim(N/THREADS_PER_BLOCK, N/THREADS_PER_BLOCK);
+  dim3 GridDim((N+2)/THREADS_PER_BLOCK, (N+2)/THREADS_PER_BLOCK);
   dim3 BlockDim(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
   for (long iter = 0; iter < max_iter; iter++) {
   	jacobi2D_step_kernel<<<GridDim, BlockDim>>>(u_new_d, u_d, h, N);
@@ -85,8 +85,8 @@ void Check_CUDA_Error(const char *message){
 
 
 int main(void) {
-  int max_iter = 10;
-  int N = THREADS_PER_BLOCK*16;
+  int max_iter = 1000;
+  int N = THREADS_PER_BLOCK*32-2; // need N+2 to be divisible by the number of threads per block
  
   double* u = (double*) malloc((N+2) * (N+2) * sizeof(double)); // N+2 x N+2 grid with 0 boundary
   double* u_new = (double*) malloc((N+2) * (N+2) * sizeof(double));
@@ -97,7 +97,7 @@ int main(void) {
 	}
 
   //calc necessary info
-  double h = ((double)1)/((N+1)*(N+1)); // h^2
+  double h = ((double)1)/(N+1); // h^2
   
   double tt = omp_get_wtime();
   jacobi2D(u_new, u, h, N,max_iter);
@@ -131,6 +131,7 @@ int main(void) {
   double err = 0;
   for (long i = 0; i < (N+2) * (N+2); i++) {
   	err += fabs(u_ref[i]-u[i]);
+  	// printf("%f,%f,%f\n",u_ref[i],u[i], u_ref[i]-u[i]);
   }
   printf("Error = %f\n", err);
   double residual = N;
@@ -139,7 +140,6 @@ int main(void) {
   printf("residual after CPU = %f\n",residual);
   residual = calc_residual( u, h, N);
   printf("residual after GPU = %f\n",residual);
-
 
   cudaFree(u_d);
   cudaFree(u_new_d);

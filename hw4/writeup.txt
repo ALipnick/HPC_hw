@@ -35,6 +35,27 @@ CPU 0.012528 s
 GPU 0.167638 s, 0.000040 s
 Error = 1585507719.000000
 
+
+2.
+Here are the results from running the code with max_iter = 10000
+andrew@LAPTOP-6R1C4SQV:/mnt/c/Users/andre/Desktop/Scientific Computing/hw/code/GitHub/hw4$ ./jacobi2D
+CPU 38.794414 s
+GPU 0.951844 s, 0.948825 s
+Error = 2.829039
+initial residual = 1022.000000
+residual after CPU = 863.419911
+residual after GPU = 863.362677
+
+We can see that there is some error produced but that the GPU code actually has a lower residual
+Additionally the GPU code is significantly faster as it is able to do all the N^2 caclulations at once rather than only have 16 threads.
+
+I saved the code with max_iter = 1000 so it runs faster when it is checked, at that point we have a smaller error and the CPU is actually outperforming the CPU
+CPU 3.733064 s
+GPU 0.148720 s, 0.145729 s
+Error = 0.890472
+initial residual = 1022.000000
+residual after CPU = 972.527725
+residual after GPU = 972.878162
 3.
 Reminder: our project is on Stochastic gradient descent. Specifically comparing it to standard gradient descent for the LASSO problem.
 
